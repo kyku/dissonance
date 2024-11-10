@@ -11,6 +11,8 @@ protocols. It provides tools for:
 [`Stream`]: futures::stream::Stream
 [`Sink`]: futures::sink::Sink
 
+Check out https://docs.rs/dissonance/ for more information.
+
 ## Quickstart - Encrypted raw byte streams with [`NoiseSocket`]
 In order to create a proper transport you first need to obtain a
 [`NoiseSocket`]. This is done through the [`NoiseBuilder`] interface.
@@ -18,9 +20,8 @@ In order to create a proper transport you first need to obtain a
 [`NoiseSocket`]: crate::noise_session::NoiseSocket
 [`NoiseBuilder`]: crate::noise_session::NoiseBuilder
 
-<div class="warning">
-NoiseBuilder requires a reliable underlying transport protocol to work!
-</div>
+> [!WARNING]
+> NoiseBuilder requires a reliable underlying transport protocol to work!
 
 Suppose you want to upgrade your plain [`TcpStream`] to a Noise one as an
 initiator by performing an IK Noise handshake. For this, you can use the
