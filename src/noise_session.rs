@@ -14,6 +14,7 @@ use tracing::{event, Level};
 
 type Key = Vec<u8>;
 
+/// Describes the local host's type in a Noise handshake
 #[derive(Display, Debug)]
 pub enum NoiseSelfType {
     N,
@@ -22,6 +23,7 @@ pub enum NoiseSelfType {
     K,
 }
 
+/// Describes the remote peer's type in a Noise handshake
 #[derive(Display, Debug)]
 pub enum NoisePeerType {
     N,
@@ -30,6 +32,9 @@ pub enum NoisePeerType {
     K(Key),
 }
 
+
+/// A builder for creating an encrypted [`NoiseSocket`]. This is the main entry
+/// point of this library.
 pub struct NoiseBuilder<T>
 where
     T: AsyncRead + AsyncWrite + Unpin,
@@ -44,6 +49,8 @@ impl<T> NoiseBuilder<T>
 where
     T: AsyncRead + AsyncWrite + Unpin,
 {
+    /// Creates a new [`NoiseBuilder`] from a keypair and an underlying stream.
+    /// Warning: the underlying stream needs to be reliable!
     pub fn new(my_keys: Keypair, stream: T) -> Self {
         Self {
             my_keys,
@@ -53,21 +60,25 @@ where
         }
     }
 
+    /// Sets local host's keys
     pub fn set_keys(mut self, keys: Keypair) -> Self {
         self.my_keys = keys;
         self
     }
 
+    /// Sets local host's handshake type
     pub fn set_my_type(mut self, myself: NoiseSelfType) -> Self {
         self.my_type = myself;
         self
     }
 
+    /// Sets remote peer's handshake type
     pub fn set_peer_type(mut self, peer: NoisePeerType) -> Self {
         self.peer_type = peer;
         self
     }
 
+    /// Builds a new transport by performing a Noise handshake as an initiator
     pub async fn build_as_initiator(
         mut self,
     ) -> Result<NoiseSocket<T>, Box<dyn Error + Send + Sync>> {
@@ -89,6 +100,7 @@ where
         Ok(NoiseSocket::new(self.stream, NoiseCodec::new(noise)))
     }
 
+    /// Builds a new transport by performing a Noise handshake as a responder
     pub async fn build_as_responder(
         mut self,
     ) -> Result<NoiseSocket<T>, Box<dyn Error + Send + Sync>> {
@@ -111,6 +123,7 @@ where
     }
 }
 
+/// A function that drives a Noise handshake to completion
 async fn handshake<T>(
     mut noise: HandshakeState,
     stream: &mut T,
@@ -151,6 +164,8 @@ where
     Ok(noise.into_transport_mode()?)
 }
 
+/// Provides a unified [`AsyncRead`] and [`AsyncWrite`] interface over a stream
+/// of encrypted Noise messages.
 #[pin_project]
 pub struct NoiseSocket<T>(
     #[pin] SinkWriter<StreamReader<CopyToBytes<Framed<T, NoiseCodec>>, Bytes>>,
@@ -160,6 +175,7 @@ impl<T> NoiseSocket<T>
 where
     T: AsyncRead + AsyncWrite + Unpin,
 {
+    /// Creates a new [`NoiseSocket`] from an underlying stream and a [`NoiseCodec`]
     pub fn new(stream: T, noise: NoiseCodec) -> Self {
         let framed = Framed::new(stream, noise);
         Self(SinkWriter::new(StreamReader::new(CopyToBytes::new(framed))))
@@ -178,6 +194,7 @@ where
             .get_noise()
     }
 
+    /// Returns remote peer's static public key
     pub fn get_remote_static(&self) -> Option<&[u8]> {
         self.get_noise()
             .get_remote_static()

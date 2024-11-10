@@ -7,6 +7,12 @@ use tokio::io::{AsyncRead, AsyncWrite};
 use tokio_util::codec::{Decoder, Encoder, Framed};
 use std::pin::Pin;
 
+/// Provides a unified [`Stream`] and [`Sink`] interface over a [`NoiseSocket`]:
+/// - the T generic parameter encodes the underlying socket type
+/// - the U generic parameter encodes the sender message used as part of the
+///   [`Sink`] interface
+/// - the V generic parameter encodes the responder message type used as part
+///   of the [`Stream`] interface
 #[pin_project]
 pub struct NoiseTransport<T, U, V>(
     #[pin] Framed<NoiseSocket<T>, AsymmetricMessageCodec<U, V>>,
@@ -18,31 +24,38 @@ where
     U: Serialize + DeserializeOwned,
     V: Serialize + DeserializeOwned,
 {
+    /// Creates a new [`NoiseTransport`] from a reliable [`NoiseSocket`]
     pub fn new(socket: NoiseSocket<T>) -> Self {
         Self(Framed::new(socket, AsymmetricMessageCodec::<U, V>::new()))
     }
 
+    /// Returns a reference to the underlying [`AsymmetricMessageCodec`]
     pub fn codec(&self) -> &AsymmetricMessageCodec<U, V> {
         self.0.codec()
     }
 
+    /// Returns a mutable reference to the underlying [`AsymmetricMessageCodec`]
     pub fn codec_mut(&mut self) -> &mut AsymmetricMessageCodec<U, V> {
         self.0.codec_mut()
     }
 
+    /// Returns a pinned mutable reference to the underlying [`AsymmetricMessageCodec`]
     pub fn codec_pin_mut(self: Pin<&mut Self>) -> &mut AsymmetricMessageCodec<U, V> {
         let this = self.project();
         this.0.codec_pin_mut()
     }
 
+    /// Returns a reference to the underlying [`NoiseSocket`]
     pub fn get_ref(&self) -> &NoiseSocket<T> {
         self.0.get_ref()
     }
 
+    /// Returns a mutable reference to the underlying [`NoiseSocket`]
     pub fn get_mut(&mut self) -> &mut NoiseSocket<T> {
         self.0.get_mut()
     }
 
+    /// Returns a pinned mutable reference to the underlying [`NoiseSocket`]
     pub fn get_pin_mut(self: Pin<&mut Self>) -> Pin<&mut NoiseSocket<T>> {
         let this = self.project();
         this.0.get_pin_mut()

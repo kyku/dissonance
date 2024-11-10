@@ -4,6 +4,9 @@ use bytes::{Bytes, BytesMut};
 use postcard::{from_bytes, to_allocvec};
 use std::marker::PhantomData;
 
+/// A codec that multiplexes sender and responder messages over a single socket.
+/// - The first generic parameter describes the sender message type.
+/// - The second generic parameter describes the responder message type.
 pub struct AsymmetricMessageCodec<U, V> {
     framing_codec: LengthDelimitedCodec,
     encoded_type: PhantomData<U>,

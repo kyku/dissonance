@@ -2,12 +2,15 @@ use bytes::{Bytes, BytesMut};
 use snow::TransportState;
 use tokio_util::codec::{Decoder, Encoder, LengthDelimitedCodec};
 
+/// A codec that maps small messages to single Noise frames
 pub struct NoiseFrameCodec {
     framing_codec: LengthDelimitedCodec,
     noise: TransportState
 }
 
 impl NoiseFrameCodec {
+    /// This codec needs a [`TransportState`] derived from a successful Noise
+    /// handshake to properly encode messages
     pub fn new(noise: TransportState) -> Self {
         Self {
             framing_codec: LengthDelimitedCodec::builder()
@@ -55,12 +58,15 @@ impl Decoder for NoiseFrameCodec {
     }
 }
 
+/// A codec that maps large byte streams to multiple Noise messages
 pub struct NoiseCodec {
     framing: LengthDelimitedCodec,
     noise: NoiseFrameCodec
 }
 
 impl NoiseCodec {
+    /// This codec needs a [`TransportState`] derived from a successful Noise
+    /// handshake to properly encode messages
     pub fn new(noise: TransportState) -> Self {
         Self {
             framing: LengthDelimitedCodec::new(),
@@ -68,6 +74,7 @@ impl NoiseCodec {
         }
     }
 
+    /// Returns the internal Noise [`TransportState`]
     pub fn get_noise(&self) -> &TransportState {
         &self.noise.noise
     }
