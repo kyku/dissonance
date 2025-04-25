@@ -2,6 +2,9 @@ use bytes::{Bytes, BytesMut};
 use snow::TransportState;
 use tokio_util::codec::{Decoder, Encoder, LengthDelimitedCodec};
 
+// snow does not curently seem to expose this constant
+const TAGLEN: usize = 16;
+
 /// A codec that maps small messages to single Noise frames
 pub struct NoiseFrameCodec {
     framing_codec: LengthDelimitedCodec,
@@ -90,7 +93,7 @@ impl Encoder<Bytes> for NoiseCodec {
     ) -> Result<(), Self::Error> {
         let mut noise_frames = BytesMut::with_capacity(65535);
         
-        for chunk in data.chunks(65535) {
+        for chunk in data.chunks(65535 - TAGLEN) {
             self.noise.encode(chunk.to_owned().into(), &mut noise_frames)?;
         }
 
